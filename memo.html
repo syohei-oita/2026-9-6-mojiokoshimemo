@@ -98,12 +98,33 @@
             gap: 8px;
         }
         #saveBtn .btn-icon { font-size: 1.25rem; line-height: 1; }
+        #saveBtn.editing-mode {
+            background-color: #f39c12;
+        }
+        #cancelEditBtn {
+            display: none;
+            padding: 13px 12px;
+            background-color: #95a5a6;
+            color: white;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        #cancelEditBtn.active {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
         .textarea-container { position: relative; margin-bottom: 15px; }
-        textarea { width: 100%; height: 240px; padding: 10px 10px 40px 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; resize: none; display: block; }
+        textarea { width: 100%; height: 240px; padding: 10px 10px 40px 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; resize: none; display: block; transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s; }
+        textarea.editing-mode {
+            border: 2px solid #f39c12;
+            box-shadow: 0 0 8px rgba(243, 156, 18, 0.35);
+            background-color: #fffdf9;
+        }
         .clear-btn { position: absolute; right: 8px; bottom: 8px; background-color: #f0f0f0; color: #555; font-size: 0.8rem; padding: 5px 10px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; transition: all 0.2s; line-height: 1.2; }
         .clear-btn:hover { background-color: #e0e0e0; color: #222; }
-        .save-options { display: flex; gap: 10px; margin-bottom: 20px; align-items: flex-end; }
-        .folder-select-group { flex: 1; display: flex; flex-direction: column; }
+        .save-options { display: flex; gap: 10px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap; }
+        .folder-select-group { flex: 1; min-width: 140px; display: flex; flex-direction: column; }
         .folder-select-label { font-size: 0.92rem; color: #333; margin-bottom: 15px; font-family: inherit; white-space: nowrap; }
         select { padding: 12px 10px; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; background-color: #fff; width: 100%; box-sizing: border-box; }
         .manage-folder-btn { background-color: #e0e0e0; color: #333; font-size: 0.85rem; padding: 8px; }
@@ -125,12 +146,21 @@
         .filter-section h2 { margin: 0; font-size: 1.15rem; white-space: nowrap; flex-shrink: 0; }
         .filter-section select { width: auto; min-width: 140px; padding: 8px 12px; font-size: 0.95rem; }
         .memo-list { list-style: none; padding: 0; margin: 0; }
-        .memo-item { background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(0, 0, 0, 0.06); padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; word-break: break-word; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03); }
+        .memo-item { background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(0, 0, 0, 0.06); padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; word-break: break-word; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03); transition: background-color 0.2s, border-color 0.2s; }
+        .memo-item.editing-target {
+            background: rgba(255, 248, 225, 0.95);
+            border: 2px solid #f39c12;
+        }
         .memo-content { flex: 1; margin-right: 10px; }
-        .memo-header { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .memo-header { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; flex-wrap: wrap; }
         .folder-badge { font-size: 0.7rem; padding: 4px 8px; border-radius: 12px; color: white; font-weight: bold; background-color: var(--badge-color); }
+        .editing-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; background-color: #f39c12; color: white; font-weight: bold; }
         .memo-date { font-size: 0.75rem; color: #777; }
-        .delete-btn { background: transparent; color: #999; border: none; padding: 0; font-size: 1.2rem; cursor: pointer; flex: 0 0 auto; }
+        .memo-actions { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+        .edit-memo-btn { background: transparent; color: #666; border: none; padding: 2px 5px; font-size: 1.05rem; cursor: pointer; border-radius: 4px; line-height: 1; }
+        .edit-memo-btn:hover { background-color: rgba(0, 0, 0, 0.06); }
+        .delete-btn { background: transparent; color: #999; border: none; padding: 2px 5px; font-size: 1.2rem; cursor: pointer; border-radius: 4px; line-height: 1; }
+        .delete-btn:hover { color: #e74c3c; background-color: rgba(0, 0, 0, 0.06); }
         /* 修正：改行をCSSで表現するためのスタイル */
         .memo-text { white-space: pre-wrap; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(0.98); } 100% { transform: scale(1); } }
@@ -155,6 +185,7 @@
             <select id="folderSelect"></select>
         </div>
         <button id="saveBtn"><span class="btn-icon">📝</span>メモを保存</button>
+        <button id="cancelEditBtn" type="button">キャンセル</button>
     </div>
     <div style="text-align: right; margin-bottom: 15px;">
         <button id="toggleSettingsBtn" class="manage-folder-btn">⚙️ フォルダを管理</button>
@@ -191,6 +222,7 @@
     const recordBtn = document.getElementById('recordBtn');
     const clearBtn = document.getElementById('clearBtn');
     const saveBtn = document.getElementById('saveBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
     const memoInput = document.getElementById('memoInput');
     const memoList = document.getElementById('memoList');
     const folderSelect = document.getElementById('folderSelect');
@@ -198,6 +230,8 @@
     const folderSettingsArea = document.getElementById('folderSettingsArea');
     const folderSettingsList = document.getElementById('folderSettingsList');
     const toggleSettingsBtn = document.getElementById('toggleSettingsBtn');
+
+    let editingMemoId = null;
 
     window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
@@ -258,8 +292,20 @@
         renderFolderSettings();
     }
 
+    function ensureFolderOption(folderName) {
+        if (!folderName) return;
+        const existsInSelect = Array.from(folderSelect.options).some(opt => opt.value === folderName);
+        if (!existsInSelect) {
+            const tempOpt = document.createElement('option');
+            tempOpt.value = folderName;
+            tempOpt.textContent = folderName;
+            folderSelect.appendChild(tempOpt);
+        }
+    }
+
     // 修正：innerHTML による文字列結合を廃止し、createElement + textContent で安全に描画（DOM XSS対策）
     function renderFolderDropdowns() {
+        const previousFolderValue = folderSelect.value;
         folderSelect.innerHTML = '';
         folders.forEach(f => {
             const opt = document.createElement('option');
@@ -267,6 +313,10 @@
             opt.textContent = f;
             folderSelect.appendChild(opt);
         });
+        if (editingMemoId !== null && previousFolderValue) {
+            ensureFolderOption(previousFolderValue);
+            folderSelect.value = previousFolderValue;
+        }
         const currentFilter = filterSelect.value;
         filterSelect.innerHTML = '';
         const optAll = document.createElement('option');
@@ -321,11 +371,18 @@
     function renameFolder(oldName) {
         const newName = prompt(`「${oldName}」の新しい名前を入力してください:`, oldName);
         if (newName === null || newName.trim() === '' || newName === oldName) return;
-        if (folders.includes(newName)) return alert('その名前のフォルダは既に存在します。');
+        const trimmedName = newName.trim();
+        if (folders.includes(trimmedName)) return alert('その名前のフォルダは既に存在します。');
         const index = folders.indexOf(oldName);
-        folders[index] = newName.trim(); updateFolderData();
+        folders[index] = trimmedName;
+        if (folderSelect.value === oldName) {
+            updateFolderData();
+            folderSelect.value = trimmedName;
+        } else {
+            updateFolderData();
+        }
         let memos = getMemos();
-        memos = memos.map(m => { if (m.folder === oldName) m.folder = newName.trim(); return m; });
+        memos = memos.map(m => { if (m.folder === oldName) m.folder = trimmedName; return m; });
         try {
             localStorage.setItem('voiceMemos', JSON.stringify(memos));
         } catch (e) {
@@ -338,9 +395,14 @@
     function deleteFolder(folderName) {
         if (folders.length <= 1) return alert('フォルダは最低1つ必要です。');
         if (confirm(`フォルダ「${folderName}」を削除しますか？\n（このフォルダに入っていたメモは「未分類」になります）`)) {
+            const wasSelected = (folderSelect.value === folderName);
             folders = folders.filter(f => f !== folderName); updateFolderData();
             let memos = getMemos();
             memos = memos.map(m => { if (m.folder === folderName) m.folder = '未分類'; return m; });
+            if (editingMemoId !== null && wasSelected) {
+                ensureFolderOption('未分類');
+                folderSelect.value = '未分類';
+            }
             try {
                 localStorage.setItem('voiceMemos', JSON.stringify(memos));
             } catch (e) {
@@ -351,19 +413,96 @@
         }
     }
 
+    function startEditMemo(id) {
+        const memos = getMemos();
+        const targetMemo = memos.find(m => m.id === id);
+        if (!targetMemo) return;
+
+        // 書きかけの文章がある場合の確認（別のメモを編集中、または新規入力中の場合）
+        const currentInput = memoInput.value.trim();
+        if (currentInput !== '') {
+            if (editingMemoId === null || editingMemoId !== id) {
+                const currentEditingMemo = editingMemoId !== null ? memos.find(m => m.id === editingMemoId) : null;
+                const isModified = !currentEditingMemo || currentEditingMemo.text !== memoInput.value;
+                if (isModified) {
+                    if (!confirm('入力中の文章がありますが、破棄してこのメモを編集しますか？')) {
+                        return;
+                    }
+                }
+            }
+        }
+
+        editingMemoId = id;
+        memoInput.value = targetMemo.text;
+
+        // 保存先フォルダをそのメモのフォルダに合わせる
+        ensureFolderOption(targetMemo.folder);
+        if (targetMemo.folder) {
+            folderSelect.value = targetMemo.folder;
+        }
+
+        // 編集モードの見た目に切り替え
+        memoInput.classList.add('editing-mode');
+        saveBtn.classList.add('editing-mode');
+        saveBtn.innerHTML = '<span class="btn-icon">🔄</span>上書き保存';
+        cancelEditBtn.classList.add('active');
+
+        renderMemos();
+
+        // 一番上の入力欄までスムーズにスクロール
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => {
+            memoInput.focus();
+        }, 300);
+    }
+
+    function cancelEditMode() {
+        editingMemoId = null;
+        memoInput.value = '';
+        memoInput.classList.remove('editing-mode');
+        saveBtn.classList.remove('editing-mode');
+        saveBtn.innerHTML = '<span class="btn-icon">📝</span>メモを保存';
+        cancelEditBtn.classList.remove('active');
+        renderFolderDropdowns();
+        renderMemos();
+    }
+
     function saveMemo() {
         const text = memoInput.value.trim();
         if (!text) return;
-        const newMemo = { id: Date.now(), text: text, date: new Date().toLocaleString('ja-JP'), folder: folderSelect.value };
         const memos = getMemos();
-        memos.unshift(newMemo);
-        try {
-            localStorage.setItem('voiceMemos', JSON.stringify(memos));
-            memoInput.value = '';
-            renderMemos();
-        } catch (e) {
-            alert('保存容量がいっぱいです。不要な古いメモを削除してから再度お試しください。');
-            console.error('メモ保存エラー:', e);
+
+        if (editingMemoId !== null) {
+            const index = memos.findIndex(m => m.id === editingMemoId);
+            if (index !== -1) {
+                memos[index].text = text;
+                memos[index].folder = folderSelect.value;
+                if (!memos[index].date.endsWith('（編集済）')) {
+                    memos[index].date = memos[index].date + '（編集済）';
+                }
+            } else {
+                // 万が一対象メモが見つからない場合は新規保存として扱う
+                const newMemo = { id: Date.now(), text: text, date: new Date().toLocaleString('ja-JP'), folder: folderSelect.value };
+                memos.unshift(newMemo);
+            }
+            try {
+                localStorage.setItem('voiceMemos', JSON.stringify(memos));
+                cancelEditMode();
+            } catch (e) {
+                alert('保存容量がいっぱいです。不要な古いメモを削除してから再度お試しください。');
+                console.error('メモ上書き保存エラー:', e);
+            }
+        } else {
+            const newMemo = { id: Date.now(), text: text, date: new Date().toLocaleString('ja-JP'), folder: folderSelect.value };
+            memos.unshift(newMemo);
+            try {
+                localStorage.setItem('voiceMemos', JSON.stringify(memos));
+                memoInput.value = '';
+                renderMemos();
+            } catch (e) {
+                alert('保存容量がいっぱいです。不要な古いメモを削除してから再度お試しください。');
+                console.error('メモ保存エラー:', e);
+            }
         }
     }
 
@@ -388,7 +527,11 @@
                 alert('データの更新保存に失敗しました。');
                 console.error('メモ削除保存エラー:', e);
             }
-            renderMemos();
+            if (editingMemoId === id) {
+                cancelEditMode();
+            } else {
+                renderMemos();
+            }
         }
     }
 
@@ -403,6 +546,9 @@
         filteredMemos.forEach(memo => {
             const li = document.createElement('li');
             li.className = 'memo-item';
+            if (memo.id === editingMemoId) {
+                li.classList.add('editing-target');
+            }
             const contentDiv = document.createElement('div');
             contentDiv.className = 'memo-content';
             const headerDiv = document.createElement('div');
@@ -415,6 +561,12 @@
             dateSpan.textContent = memo.date;
             headerDiv.appendChild(folderBadge);
             headerDiv.appendChild(dateSpan);
+            if (memo.id === editingMemoId) {
+                const editingBadge = document.createElement('span');
+                editingBadge.className = 'editing-badge';
+                editingBadge.textContent = '編集中';
+                headerDiv.appendChild(editingBadge);
+            }
             const textSpan = document.createElement('span');
             // 修正：innerHTML → textContent に変更（XSS脆弱性の解消）
             // 改行の表示は CSS の white-space: pre-wrap で対応
@@ -422,18 +574,34 @@
             textSpan.textContent = memo.text;
             contentDiv.appendChild(headerDiv);
             contentDiv.appendChild(textSpan);
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'memo-actions';
+
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-memo-btn';
+            editBtn.textContent = '✏️';
+            editBtn.title = 'このメモを編集';
+            editBtn.onclick = () => startEditMemo(memo.id);
+
             const delBtn = document.createElement('button');
             delBtn.className = 'delete-btn';
-            delBtn.innerHTML = '×';
+            delBtn.textContent = '×';
+            delBtn.title = 'このメモを削除';
             delBtn.onclick = () => deleteMemo(memo.id);
+
+            actionsDiv.appendChild(editBtn);
+            actionsDiv.appendChild(delBtn);
+
             li.appendChild(contentDiv);
-            li.appendChild(delBtn);
+            li.appendChild(actionsDiv);
             memoList.appendChild(li);
         });
     }
 
     recordBtn.addEventListener('click', toggleRecording);
     saveBtn.addEventListener('click', saveMemo);
+    cancelEditBtn.addEventListener('click', cancelEditMode);
     clearBtn.addEventListener('click', () => {
         if (!memoInput.value.trim()) return;
         if (confirm('入力欄のテキストをすべて消去しますか？')) {
