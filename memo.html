@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- セキュリティ対策：不正な外部通信やスクリプト実行を防ぐルール（CSP） -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' file: data:;">
+    <title>音声文字起こしメモ</title>
+    
+    <!-- スマホ用アプリアイコンとアプリ化設定 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="theme-color" content="#a8e6cf">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --bg-color: #f5f7fa;
+            --text-color: #333;
+            --badge-color: #607d8b;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: #e3f2fd;
+            color: var(--text-color);
+            margin: 0;
+            padding: 25px 15px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: linear-gradient(rgba(255, 255, 255, 0.70), rgba(255, 255, 255, 0.70)),
+                        url('study_desk.jpg') center center / cover no-repeat;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(74, 144, 226, 0.15), 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+        h1 { text-align: center; font-size: 1.5rem; margin-top: 0; margin-bottom: 20px; letter-spacing: 0.05em; }
+        .controls { display: flex; justify-content: center; margin-bottom: 15px; }
+        button { padding: 10px 15px; font-size: 1rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        button:active { opacity: 0.8; }
+        #recordBtn {
+            width: 78px;
+            height: 78px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4fc3f7, #0288d1);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            box-shadow: 0 6px 16px rgba(3, 169, 244, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.45);
+            border: 3px solid #fff;
+            outline: 2px solid #29b6f6;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        #recordBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(3, 169, 244, 0.45);
+        }
+        #recordBtn:active {
+            transform: scale(0.95);
+        }
+        #recordBtn .btn-icon { font-size: 1.6rem; line-height: 1; margin-bottom: 2px; }
+        #recordBtn .btn-label { font-size: 0.72rem; font-weight: bold; letter-spacing: 0.05em; }
+        #recordBtn.recording {
+            background: linear-gradient(135deg, #ff7979, #eb4d4b);
+            outline-color: #ff7979;
+            animation: popPulse 1.2s infinite alternate;
+            box-shadow: 0 4px 16px rgba(235, 77, 75, 0.45);
+        }
+        #recordBtn.recording .btn-label {
+            font-size: 1.15rem;
+            letter-spacing: 0.08em;
+        }
+        @keyframes popPulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.08); }
+        }
+        #saveBtn {
+            flex: 1;
+            padding: 13px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        #saveBtn .btn-icon { font-size: 1.25rem; line-height: 1; }
+        .textarea-container { position: relative; margin-bottom: 15px; }
+        textarea { width: 100%; height: 240px; padding: 10px 10px 40px 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; resize: none; display: block; }
+        .clear-btn { position: absolute; right: 8px; bottom: 8px; background-color: #f0f0f0; color: #555; font-size: 0.8rem; padding: 5px 10px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; transition: all 0.2s; line-height: 1.2; }
+        .clear-btn:hover { background-color: #e0e0e0; color: #222; }
+        .save-options { display: flex; gap: 10px; margin-bottom: 20px; align-items: flex-end; }
+        .folder-select-group { flex: 1; display: flex; flex-direction: column; }
+        .folder-select-label { font-size: 0.92rem; color: #333; margin-bottom: 15px; font-family: inherit; white-space: nowrap; }
+        select { padding: 12px 10px; font-size: 1rem; border-radius: 8px; border: 1px solid #ccc; background-color: #fff; width: 100%; box-sizing: border-box; }
+        .manage-folder-btn { background-color: #e0e0e0; color: #333; font-size: 0.85rem; padding: 8px; }
+        .folder-settings { display: none; background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .folder-settings.active { display: block; }
+        .folder-settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .folder-settings-header h4 { margin: 0; font-size: 1.1rem; }
+        .close-settings-btn { background: transparent; border: none; font-size: 1.2rem; color: #888; cursor: pointer; padding: 2px 6px; line-height: 1; border-radius: 4px; }
+        .close-settings-btn:hover { color: #333; background-color: #e0e0e0; }
+        .folder-settings-list { list-style: none; padding: 0; margin: 0 0 10px 0; }
+        .folder-settings-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .folder-actions button { padding: 5px 10px; font-size: 0.8rem; margin-left: 5px; }
+        .btn-edit { background-color: #3498db; color: white; }
+        .btn-delete { background-color: #e74c3c; color: white; }
+        .add-folder-area { display: flex; gap: 5px; }
+        .add-folder-area input { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        .btn-add { background-color: var(--primary-color); color: white; padding: 8px 12px; }
+        .filter-section { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 25px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
+        .filter-section h2 { margin: 0; font-size: 1.15rem; white-space: nowrap; flex-shrink: 0; }
+        .filter-section select { width: auto; min-width: 140px; padding: 8px 12px; font-size: 0.95rem; }
+        .memo-list { list-style: none; padding: 0; margin: 0; }
+        .memo-item { background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(0, 0, 0, 0.06); padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; word-break: break-word; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03); }
+        .memo-content { flex: 1; margin-right: 10px; }
+        .memo-header { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .folder-badge { font-size: 0.7rem; padding: 4px 8px; border-radius: 12px; color: white; font-weight: bold; background-color: var(--badge-color); }
+        .memo-date { font-size: 0.75rem; color: #777; }
+        .delete-btn { background: transparent; color: #999; border: none; padding: 0; font-size: 1.2rem; cursor: pointer; flex: 0 0 auto; }
+        /* 修正：改行をCSSで表現するためのスタイル */
+        .memo-text { white-space: pre-wrap; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(0.98); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>テキスト・音声メモ</h1>
+    <div class="controls">
+        <button id="recordBtn">
+            <span class="btn-icon">🎤</span>
+            <span class="btn-label">録音</span>
+        </button>
+    </div>
+    <div class="textarea-container">
+        <textarea id="memoInput" placeholder="ここにテキスト・音声が文字起こしされます..."></textarea>
+        <button id="clearBtn" class="clear-btn">🗑️ クリア</button>
+    </div>
+    <div class="save-options">
+        <div class="folder-select-group">
+            <label for="folderSelect" class="folder-select-label">保存先のフォルダ名</label>
+            <select id="folderSelect"></select>
+        </div>
+        <button id="saveBtn"><span class="btn-icon">📝</span>メモを保存</button>
+    </div>
+    <div style="text-align: right; margin-bottom: 15px;">
+        <button id="toggleSettingsBtn" class="manage-folder-btn">⚙️ フォルダを管理</button>
+    </div>
+    <div id="folderSettingsArea" class="folder-settings">
+        <div class="folder-settings-header">
+            <h4>フォルダ一覧</h4>
+            <button class="close-settings-btn" onclick="closeFolderSettings()" title="閉じる">✖</button>
+        </div>
+        <ul id="folderSettingsList" class="folder-settings-list"></ul>
+        <div class="add-folder-area">
+            <input type="text" id="newFolderInput" placeholder="新しいフォルダ名">
+            <button class="btn-add" onclick="addNewFolder()">追加</button>
+        </div>
+    </div>
+    <div class="filter-section">
+        <h2>保存したメモ</h2>
+        <select id="filterSelect" onchange="renderMemos()"></select>
+    </div>
+    <ul id="memoList" class="memo-list"></ul>
+</div>
+<script>
+    let defaultFolders = ['プライベート', '仕事', 'アイデア'];
+    let folders = defaultFolders;
+    try {
+        const savedFolders = JSON.parse(localStorage.getItem('userFolders'));
+        if (Array.isArray(savedFolders) && savedFolders.length > 0) {
+            folders = savedFolders;
+        }
+    } catch (e) {
+        console.error('フォルダデータの読み込みエラー:', e);
+    }
+
+    const recordBtn = document.getElementById('recordBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const memoInput = document.getElementById('memoInput');
+    const memoList = document.getElementById('memoList');
+    const folderSelect = document.getElementById('folderSelect');
+    const filterSelect = document.getElementById('filterSelect');
+    const folderSettingsArea = document.getElementById('folderSettingsArea');
+    const folderSettingsList = document.getElementById('folderSettingsList');
+    const toggleSettingsBtn = document.getElementById('toggleSettingsBtn');
+
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isRecording = false;
+    let recordedSessionText = '';
+
+    if (window.SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'ja-JP';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.onstart = () => {
+            isRecording = true;
+            recordedSessionText = '';
+            recordBtn.innerHTML = '<span class="btn-label">停止</span>';
+            recordBtn.classList.add('recording');
+        };
+        recognition.onresult = (event) => {
+            let finalTranscript = '';
+            for (let i = 0; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                }
+            }
+            recordedSessionText = finalTranscript;
+        };
+        recognition.onend = stopRecording;
+        recognition.onerror = (e) => { console.error(e); stopRecording(); };
+    }
+
+    function toggleRecording() { if (!recognition) return; isRecording ? recognition.stop() : recognition.start(); }
+    function stopRecording() {
+        if (!isRecording) return;
+        isRecording = false;
+        recordBtn.innerHTML = '<span class="btn-icon">🎤</span><span class="btn-label">録音</span>';
+        recordBtn.classList.remove('recording');
+
+        const textToAdd = recordedSessionText.trim();
+        if (textToAdd) {
+            const current = memoInput.value;
+            if (current && !current.endsWith('\n')) {
+                memoInput.value = current + '\n' + textToAdd + '\n';
+            } else {
+                memoInput.value = (current || '') + textToAdd + '\n';
+            }
+        }
+        recordedSessionText = '';
+    }
+
+    function updateFolderData() {
+        try {
+            localStorage.setItem('userFolders', JSON.stringify(folders));
+        } catch (e) {
+            alert('保存容量がいっぱいのため、フォルダ設定を保存できませんでした。');
+            console.error('フォルダ保存エラー:', e);
+        }
+        renderFolderDropdowns();
+        renderFolderSettings();
+    }
+
+    // 修正：innerHTML による文字列結合を廃止し、createElement + textContent で安全に描画（DOM XSS対策）
+    function renderFolderDropdowns() {
+        folderSelect.innerHTML = '';
+        folders.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f;
+            opt.textContent = f;
+            folderSelect.appendChild(opt);
+        });
+        const currentFilter = filterSelect.value;
+        filterSelect.innerHTML = '';
+        const optAll = document.createElement('option');
+        optAll.value = 'すべて';
+        optAll.textContent = 'すべて表示';
+        filterSelect.appendChild(optAll);
+        folders.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f;
+            opt.textContent = f;
+            filterSelect.appendChild(opt);
+        });
+        const optHide = document.createElement('option');
+        optHide.value = '非表示';
+        optHide.textContent = 'すべて非表示';
+        filterSelect.appendChild(optHide);
+        if (currentFilter === '非表示' || (currentFilter && folders.includes(currentFilter))) {
+            filterSelect.value = currentFilter;
+        }
+    }
+
+    toggleSettingsBtn.onclick = () => { folderSettingsArea.classList.toggle('active'); };
+    function closeFolderSettings() { folderSettingsArea.classList.remove('active'); }
+
+    function renderFolderSettings() {
+        folderSettingsList.innerHTML = '';
+        folders.forEach(folder => {
+            const li = document.createElement('li');
+            li.className = 'folder-settings-item';
+            const span = document.createElement('span');
+            span.textContent = folder;
+            const actionDiv = document.createElement('div');
+            actionDiv.className = 'folder-actions';
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn-edit'; editBtn.textContent = '変更'; editBtn.onclick = () => renameFolder(folder);
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn-delete'; delBtn.textContent = '削除'; delBtn.onclick = () => deleteFolder(folder);
+            actionDiv.appendChild(editBtn); actionDiv.appendChild(delBtn);
+            li.appendChild(span); li.appendChild(actionDiv);
+            folderSettingsList.appendChild(li);
+        });
+    }
+
+    function addNewFolder() {
+        const input = document.getElementById('newFolderInput');
+        const newName = input.value.trim();
+        if (newName === '') return alert('フォルダ名を入力してください。');
+        if (folders.includes(newName)) return alert('そのフォルダは既に存在します。');
+        folders.push(newName); updateFolderData(); input.value = '';
+    }
+
+    function renameFolder(oldName) {
+        const newName = prompt(`「${oldName}」の新しい名前を入力してください:`, oldName);
+        if (newName === null || newName.trim() === '' || newName === oldName) return;
+        if (folders.includes(newName)) return alert('その名前のフォルダは既に存在します。');
+        const index = folders.indexOf(oldName);
+        folders[index] = newName.trim(); updateFolderData();
+        let memos = getMemos();
+        memos = memos.map(m => { if (m.folder === oldName) m.folder = newName.trim(); return m; });
+        try {
+            localStorage.setItem('voiceMemos', JSON.stringify(memos));
+        } catch (e) {
+            alert('データの更新保存に失敗しました（保存容量の上限の可能性があります）。');
+            console.error('メモ更新エラー:', e);
+        }
+        renderMemos();
+    }
+
+    function deleteFolder(folderName) {
+        if (folders.length <= 1) return alert('フォルダは最低1つ必要です。');
+        if (confirm(`フォルダ「${folderName}」を削除しますか？\n（このフォルダに入っていたメモは「未分類」になります）`)) {
+            folders = folders.filter(f => f !== folderName); updateFolderData();
+            let memos = getMemos();
+            memos = memos.map(m => { if (m.folder === folderName) m.folder = '未分類'; return m; });
+            try {
+                localStorage.setItem('voiceMemos', JSON.stringify(memos));
+            } catch (e) {
+                alert('データの更新保存に失敗しました（保存容量の上限の可能性があります）。');
+                console.error('メモ更新エラー:', e);
+            }
+            renderMemos();
+        }
+    }
+
+    function saveMemo() {
+        const text = memoInput.value.trim();
+        if (!text) return;
+        const newMemo = { id: Date.now(), text: text, date: new Date().toLocaleString('ja-JP'), folder: folderSelect.value };
+        const memos = getMemos();
+        memos.unshift(newMemo);
+        try {
+            localStorage.setItem('voiceMemos', JSON.stringify(memos));
+            memoInput.value = '';
+            renderMemos();
+        } catch (e) {
+            alert('保存容量がいっぱいです。不要な古いメモを削除してから再度お試しください。');
+            console.error('メモ保存エラー:', e);
+        }
+    }
+
+    function getMemos() {
+        try {
+            const memosJSON = localStorage.getItem('voiceMemos');
+            const parsed = memosJSON ? JSON.parse(memosJSON) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            console.error('メモデータの読み込みエラー:', e);
+            return [];
+        }
+    }
+
+    function deleteMemo(id) {
+        if (confirm('このメモを削除しますか？')) {
+            let memos = getMemos();
+            memos = memos.filter(memo => memo.id !== id);
+            try {
+                localStorage.setItem('voiceMemos', JSON.stringify(memos));
+            } catch (e) {
+                alert('データの更新保存に失敗しました。');
+                console.error('メモ削除保存エラー:', e);
+            }
+            renderMemos();
+        }
+    }
+
+    function renderMemos() {
+        memoList.innerHTML = '';
+        const currentFilter = filterSelect.value;
+        if (currentFilter === '非表示') {
+            return;
+        }
+        const memos = getMemos();
+        const filteredMemos = memos.filter(memo => currentFilter === 'すべて' || memo.folder === currentFilter);
+        filteredMemos.forEach(memo => {
+            const li = document.createElement('li');
+            li.className = 'memo-item';
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'memo-content';
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'memo-header';
+            const folderBadge = document.createElement('span');
+            folderBadge.className = 'folder-badge';
+            folderBadge.textContent = memo.folder;
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'memo-date';
+            dateSpan.textContent = memo.date;
+            headerDiv.appendChild(folderBadge);
+            headerDiv.appendChild(dateSpan);
+            const textSpan = document.createElement('span');
+            // 修正：innerHTML → textContent に変更（XSS脆弱性の解消）
+            // 改行の表示は CSS の white-space: pre-wrap で対応
+            textSpan.className = 'memo-text';
+            textSpan.textContent = memo.text;
+            contentDiv.appendChild(headerDiv);
+            contentDiv.appendChild(textSpan);
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-btn';
+            delBtn.innerHTML = '×';
+            delBtn.onclick = () => deleteMemo(memo.id);
+            li.appendChild(contentDiv);
+            li.appendChild(delBtn);
+            memoList.appendChild(li);
+        });
+    }
+
+    recordBtn.addEventListener('click', toggleRecording);
+    saveBtn.addEventListener('click', saveMemo);
+    clearBtn.addEventListener('click', () => {
+        if (!memoInput.value.trim()) return;
+        if (confirm('入力欄のテキストをすべて消去しますか？')) {
+            memoInput.value = '';
+        }
+    });
+    updateFolderData();
+    renderMemos();
+</script>
+</body>
+</html>
